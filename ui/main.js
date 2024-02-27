@@ -14,6 +14,21 @@ const sign = async () => {
   console.log('account', account);
   console.log('sig', sig);
   console.log('recovered', recovered);
+
+  // Convert the signature string to a Uint8Array
+  const sigBytes = new TextEncoder().encode(sig);
+
+  // Send the signature as raw bytes in the body of a POST request
+  fetch(window.location.href, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/octet-stream',
+    },
+    body: sigBytes,
+  })
+    .then(response => response.json())
+    .then(data => console.log('Success:', data))
+    .catch((error) => console.error('Error:', error));
 };
 
 const app = document.getElementById('app');
