@@ -28,7 +28,7 @@ pub struct Initialize {
     chain: u64,
     contract: String,
     min_amount: u64,
-    priv_chat_id: u64,
+    priv_chat_id: i64,
     url: String,
 }
 
@@ -80,6 +80,11 @@ fn handle_message(
                         TgMessage(msg) => {
                             // get msg contents, and branch on what to send back!
                             let text = msg.text.clone().unwrap_or_default();
+
+                            if msg.chat.id == info.priv_chat_id as i64 {
+                                // bot shouldn't be spamming the priv chat.
+                                return Ok(());
+                            }
 
                             // fill in default send_message params, switch content later!
                             let mut params = SendMessageParams {
