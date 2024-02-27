@@ -6,9 +6,9 @@
         "request_networking": true,
         "request_capabilities": [
             "http_server:distro:sys",
-            "vfs:distro:sys",
             "http_client:distro:sys",
-            "vfs:distro:sys"
+            "vfs:distro:sys",
+            "eth:distro:sys"
         ],
         "grant_capabilities": [],
         "public": true

@@ -1,11 +1,15 @@
+use alloy_signer::Signature;
+use alloy_sol_types::{sol, SolCall, SolValue};
 use frankenstein::{ChatId, SendMessageParams, TelegramApi, UpdateContent::Message as TgMessage};
 use kinode::process::standard::get_blob;
 use kinode_process_lib::{
     await_message, call_init,
+    eth::{call, Address as EthAddress, TransactionInput, TransactionRequest, U256, U64},
     http::{bind_http_path, serve_ui, HttpServerRequest},
     println, Address, Message,
 };
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 mod tg_api;
 use tg_api::{init_tg_bot, Api, TgResponse};
 
@@ -17,6 +21,7 @@ wit_bindgen::generate!({
     },
 });
 
+/// after installing you need to boot the kinogate with some data.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Initialize {
     tg_token: String,
@@ -25,6 +30,17 @@ pub struct Initialize {
     min_amount: u64,
     priv_chat_id: u64,
     url: String,
+}
+
+/// incoming json frokm frontend.
+#[derive(Deserialize)]
+struct IncomingSignature {
+    signature: String,
+}
+
+// balanceOf request on erc-20s and erc-721s
+sol! {
+    function balanceOf(address owner) external view returns (uint);
 }
 
 fn handle_message(
@@ -150,10 +166,49 @@ fn handle_http_message(
                     let blob = get_blob();
                     // get signature, check for that address actually owns the amount,
                     // generate invite link, and send!
-                    if let Some(blob) = blob {
-                        params.text =
-                            "we have something in blob, vverifying, u get let in.".to_string();
+                    if let Some(sig) = blob {
+                        params.text = "verifying your signature...".to_string();
                         api.send_message(&params)?;
+
+                        let sig: String =
+                            serde_json::from_slice::<IncomingSignature>(&sig.bytes)?.signature;
+
+                        let sig = Signature::from_str(&sig)?;
+
+                        let address = sig.recover_address_from_msg("hello".as_bytes())?;
+                        let contract_addy = EthAddress::from_str(&info.contract)?;
+
+                        let input = balanceOfCall { owner: address };
+
+                        let tx_input = TransactionInput {
+                            data: Some(input.abi_encode().into()),
+                            ..Default::default()
+                        };
+
+                        let tx_req = TransactionRequest {
+                            chain_id: Some(U64::from(info.chain)),
+                            to: Some(contract_addy),
+                            input: tx_input,
+                            ..Default::default()
+                        };
+
+                        let bal = call(tx_req, None)?;
+                        let bal = U256::abi_decode(&bal.to_vec(), false)?;
+                        let bal = bal.to::<u64>();
+
+                        if bal >= info.min_amount {
+                            let link = format!(
+                                "{}/kinogate:kinogate:template.os/?chat_id={}",
+                                info.url, chat_id
+                            );
+                            params.text = link;
+                            api.send_message(&params)?;
+                        } else {
+                            params.text =
+                                "you don't have enough tokens to enter... it's over for u"
+                                    .to_string();
+                            api.send_message(&params)?;
+                        }
                     } else {
                         println!("http error, no signature sent...");
                         return Ok(());

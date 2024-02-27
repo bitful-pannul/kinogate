@@ -16,17 +16,14 @@ const sign = async () => {
   console.log('recovered', recovered);
 
   // Convert the signature string to a Uint8Array
-  const sigBytes = new TextEncoder().encode(sig);
-
   console.log('posting some bytes bby');
 
-  // Send the signature as raw bytes in the body of a POST request
   fetch(window.location.href, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': 'application/json',
     },
-    body: sigBytes,
+    body: JSON.stringify({ signature: sig }),
   })
     .then(response => response.json())
     .then(data => console.log('Success:', data))
