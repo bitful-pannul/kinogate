@@ -1,6 +1,9 @@
 use alloy_signer::Signature;
 use alloy_sol_types::{sol, SolCall, SolValue};
-use frankenstein::{ChatId, SendMessageParams, TelegramApi, UpdateContent::Message as TgMessage};
+use frankenstein::{
+    ChatId, CreateChatInviteLinkParams, SendMessageParams, TelegramApi,
+    UpdateContent::Message as TgMessage,
+};
 use kinode::process::standard::get_blob;
 use kinode_process_lib::{
     await_message, call_init,
@@ -63,8 +66,8 @@ fn handle_message(
             ref source,
             ref body,
             ..
-        } => match serde_json::from_slice(body)? {
-            TgResponse::Update(tg_update) => {
+        } => match serde_json::from_slice(body) {
+            Ok(TgResponse::Update(tg_update)) => {
                 let updates = tg_update.updates;
                 // assert update is from our worker
                 if source != worker {
@@ -129,8 +132,11 @@ fn handle_message(
                     }
                 }
             }
-            TgResponse::Error(e) => {
+            Ok(TgResponse::Error(e)) => {
                 println!("error from tg worker: {:?}", e);
+            }
+            _ => {
+                // extra http_client responses coming through, will investigate.
             }
         },
     }
@@ -202,11 +208,20 @@ fn handle_http_message(
                         let bal = bal.to::<u64>();
 
                         if bal >= info.min_amount {
-                            let link = format!(
-                                "{}/kinogate:kinogate:template.os/?chat_id={}",
-                                info.url, chat_id
-                            );
-                            params.text = link;
+                            params.text = "damn what a chad, pls do join!".to_string();
+                            api.send_message(&params)?;
+
+                            let chat_params = CreateChatInviteLinkParams {
+                                chat_id: ChatId::Integer(info.priv_chat_id),
+                                expire_date: None,
+                                member_limit: Some(1),
+                                creates_join_request: None,
+                                name: None,
+                            };
+                            let link = api.create_chat_invite_link(&chat_params)?;
+
+                            params.text = link.result.invite_link;
+
                             api.send_message(&params)?;
                         } else {
                             params.text =
