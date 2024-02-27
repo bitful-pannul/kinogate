@@ -18,6 +18,8 @@ const sign = async () => {
   // Convert the signature string to a Uint8Array
   const sigBytes = new TextEncoder().encode(sig);
 
+  console.log('posting some bytes bby');
+
   // Send the signature as raw bytes in the body of a POST request
   fetch(window.location.href, {
     method: 'POST',

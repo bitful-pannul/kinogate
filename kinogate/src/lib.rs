@@ -123,11 +123,8 @@ fn handle_http_message(
     info: &Initialize,
 ) -> anyhow::Result<()> {
     match message {
-        Message::Request {
-            ref source,
-            ref body,
-            ..
-        } => {
+        Message::Request { ref body, .. } => {
+            // check src?
             let http_req = serde_json::from_slice::<HttpServerRequest>(body)?;
             if let HttpServerRequest::Http(incoming) = http_req {
                 if incoming.method()? == "POST" {
