@@ -2,6 +2,7 @@ import './style.css';
 import { ethers } from 'ethers';
 
 const sign = async () => {
+  console.log('signing...');
   const message = 'hello';
   const hexMessage = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(message));
   const web3Provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
@@ -25,9 +26,17 @@ const sign = async () => {
     },
     body: JSON.stringify({ signature: sig }),
   })
-    .then(response => response.json())
-    .then(data => console.log('Success:', data))
-    .catch((error) => console.error('Error:', error));
+    .then(response => {
+      if (response.ok) {
+        console.log('Success: Signature accepted');
+      } else if (response.status === 400) {
+        console.error('Error: Bad request');
+      } else {
+        console.error('Error: Unexpected response status', response.status);
+      }
+    })
+    .catch((error) => console.error('Network error:', error));
+
 };
 
 const app = document.getElementById('app');

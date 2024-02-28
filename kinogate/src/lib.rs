@@ -8,7 +8,7 @@ use kinode::process::standard::get_blob;
 use kinode_process_lib::{
     await_message, call_init,
     eth::{call, Address as EthAddress, TransactionInput, TransactionRequest, U256, U64},
-    http::{bind_http_path, serve_ui, HttpServerRequest},
+    http::{bind_http_path, send_response, serve_ui, HttpServerRequest, StatusCode},
     println, Address, Message,
 };
 use serde::{Deserialize, Serialize};
@@ -55,7 +55,7 @@ fn handle_message(
     let message = await_message()?;
 
     if message.source().process == "http_server:distro:sys" {
-        handle_http_message(message.clone(), api, worker, info)?
+        handle_http_message(message.clone(), api, info)?
     }
 
     match message {
@@ -143,12 +143,7 @@ fn handle_message(
     Ok(())
 }
 
-fn handle_http_message(
-    message: Message,
-    api: &Api,
-    worker: &Address,
-    info: &Initialize,
-) -> anyhow::Result<()> {
+fn handle_http_message(message: Message, api: &Api, info: &Initialize) -> anyhow::Result<()> {
     match message {
         Message::Request { ref body, .. } => {
             // check src?
@@ -229,8 +224,10 @@ fn handle_http_message(
                                     .to_string();
                             api.send_message(&params)?;
                         }
+                        send_response(StatusCode::OK, None, vec![]);
                     } else {
                         println!("http error, no signature sent...");
+                        send_response(StatusCode::BAD_REQUEST, None, vec![]);
                         return Ok(());
                     }
                 }
