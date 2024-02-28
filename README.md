@@ -2,16 +2,16 @@
 
 A kinode app that runs a telegram bot, token-gating a private groupchat you have.
 
-[todo streamline build]
-
 ## Setup
 
 To build, you need to have the compiled .wasm of the telegram bot worker in your `/pkg/` directory, which you can get by running `kit b` on this repo:
 <https://github.com/kinode-dao/telegram-bot>.
 
-Then you can start the app by running `kit bs`, and initialize by messaging it some json.
+And then ```cp /pkg/tg.wasm ../path_to_your_kinogate/pkg/```.
 
-m our@kinogate:kinogate:template.os json
+You can now start the app by running `kit bs`, and initialize it by giving it some json.
+
+```m our@kinogate:kinogate:template.os json```
 
 where json is:
 
