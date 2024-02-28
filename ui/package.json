@@ -5,13 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "vite",
     "build": "vite build",
-    "preview": "vite preview",
     "copy": "mkdir -p ../pkg/ui && rm -rf ../pkg/ui/* && cp -r dist/* ../pkg/ui/",
-    "build:copy": "npm run build && npm run copy"
+    "build:copy": "npm run build && npm run copy",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
   },
-  "devDependencies": {
-    "vite": "^3.1.0"
+ "devDependencies": {
+    "vite": "^3.2.8"
   },
   "dependencies": {
     "eth-sig-util": "^3.0.1",
